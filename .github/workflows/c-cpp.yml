@@ -55,7 +55,7 @@ jobs:
     runs-on: ubuntu-latest
     name: Build on ubuntu20.04 aarch64
     steps:
-      - uses: uraimo/run-on-arch-action@v2
+      - uses: uraimo/run-on-arch-action@v2.1.1
         name: Run commands
         id: runcmd
         with:
