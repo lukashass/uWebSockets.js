@@ -81,7 +81,7 @@ jobs:
           # no secrets are present in the container state or logs.
           install: |
             apt-get update -q -y
-            apt-get install -q -y git make g++-aarch64-linux-gnu
+            apt-get install -q -y git make clang g++-aarch64-linux-gnu
 
           # Set an output parameter `uname` for use in subsequent steps
           run: |
