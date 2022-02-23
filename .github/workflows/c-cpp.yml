@@ -2,7 +2,7 @@ name: Build
 
 on:
   push:
-    branches: [ master, arm ]
+    branches: [master, arm]
 
 jobs:
   build-windows:
@@ -65,14 +65,40 @@ jobs:
           # Not required, but speeds up builds by storing container images in
           # a GitHub package registry.
           githubToken: ${{ github.token }}
+          # Create an artifacts directory
+          setup: |
+            mkdir -p "${PWD}/artifacts"
+
+          # Mount the artifacts directory as /artifacts in the container
+          dockerRunArgs: |
+            --volume "${PWD}/artifacts:/artifacts"
+
+          # Install some dependencies in the container. This speeds up builds if
+          # you are also using githubToken. Any dependencies installed here will
+          # be part of the container image that gets cached, so subsequent
+          # builds don't have to re-install them. The image layer is cached
+          # publicly in your project's package repository, so it is vital that
+          # no secrets are present in the container state or logs.
+          install: |
+            case "${{ matrix.distro }}" in
+              ubuntu*|jessie|stretch|buster|bullseye)
+                apt-get update -q -y
+                apt-get install -q -y git g++-aarch64-linux-gnu
+                ;;
+              fedora*)
+                dnf -y update
+                dnf -y install git which
+                ;;
+              alpine*)
+                apk update
+                apk add git
+                ;;
+            esac
 
           # Set an output parameter `uname` for use in subsequent steps
           run: |
             uname -a
             echo ::set-output name=uname::$(uname -a)
-            sudo xcode-select -switch /Applications/Xcode_12.2.app || true
-            sudo apt update || true
-            sudo apt install -y g++-aarch64-linux-gnu || true
             git clone --recursive https://github.com/uNetworking/uWebSockets.js.git
             cd uWebSockets.js
             make
