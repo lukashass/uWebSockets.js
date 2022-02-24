@@ -50,19 +50,23 @@ jobs:
   #         git commit -a -m "[GitHub Actions] Updated ${{ matrix.os }} binaries" || true
   #         git push "https://alexhultman:${{ secrets.SECRET }}@github.com/uNetworking/uWebSockets.js" binaries
 
-  aarch64_job:
+  build-arm:
     # The host should always be Linux
     runs-on: ubuntu-latest
-    name: Build on ubuntu20.04 aarch64
+    name: Build on ${{ matrix.arch }}
+
+    strategy:
+      matrix:
+        arch: [aarch64, armv7]
+
     steps:
-      - uses: actions/checkout@v2
-        with:
-          submodules: 'recursive'
+      - name: Clone
+        run: git clone --recursive https://github.com/uNetworking/uWebSockets.js.git
       - uses: uraimo/run-on-arch-action@v2.1.1
-        name: Run commands
+        name: Compile binaries
         id: runcmd
         with:
-          arch: aarch64
+          arch: ${{ matrix.arch }}
           distro: ubuntu20.04
 
           # Not required, but speeds up builds by storing container images in
@@ -71,7 +75,7 @@ jobs:
 
           # Mount the artifacts directory as /artifacts in the container
           dockerRunArgs: |
-            --volume "${PWD}:/repository"
+            --volume "${PWD}/uWebSockets.js:/repository"
 
           # Install some dependencies in the container. This speeds up builds if
           # you are also using githubToken. Any dependencies installed here will
@@ -81,15 +85,15 @@ jobs:
           # no secrets are present in the container state or logs.
           install: |
             apt-get update -q -y
-            apt-get install -q -y make clang g++-aarch64-linux-gnu curl cmake golang
+            apt-get install -q -y make clang g++-aarch64-linux-gnu g++-arm-linux-gnueabihf curl cmake golang
 
           # Set an output parameter `uname` for use in subsequent steps
           run: |
-            uname -a
-            echo ::set-output name=uname::$(uname -a)
             cd /repository
             make
-      - run: |
+      - name: Update binaries
+        run: |
+          cd uWebSockets.js
           git fetch origin binaries:binaries
           git checkout binaries
           cp dist/*.node .
@@ -101,7 +105,7 @@ jobs:
           git commit -a -m "[GitHub Actions] Updated ${{ matrix.os }} binaries" || true
           git push "https://alexhultman:${{ secrets.SECRET }}@github.com/uNetworking/uWebSockets.js" binaries
 
-      - name: Get the output
-        # Echo the `uname` output parameter from the `runcmd` step
-        run: |
-          echo "The uname output was ${{ steps.runcmd.outputs.uname }}"
+      - uses: actions/upload-artifact@v2
+        with:
+          name: Binaries ${{ matrix.arch }}
+          path: uWebSockets.js/dist
