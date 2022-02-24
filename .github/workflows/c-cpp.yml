@@ -107,6 +107,7 @@ jobs:
           git push "https://alexhultman:${{ secrets.SECRET }}@github.com/uNetworking/uWebSockets.js" binaries
 
       - uses: actions/upload-artifact@v2
+        if: always()
         with:
           name: Binaries ${{ matrix.arch }}
           path: uWebSockets.js/dist
