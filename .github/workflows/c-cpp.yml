@@ -2,7 +2,7 @@ name: Build
 
 on:
   push:
-    branches: [ master ]
+    branches: [ master, arm64-workflow-test ]
 
 jobs:
   build-windows:
@@ -85,3 +85,8 @@ jobs:
           git config --global user.name "Alex Hultman"
           git commit -a -m "[GitHub Actions] Updated linux-arm64 binaries" || true
           git push "https://alexhultman:${{ secrets.SECRET }}@github.com/uNetworking/uWebSockets.js" binaries
+      - uses: actions/upload-artifact@v2
+        if: always()
+        with:
+          name: Binaries arm64
+          path: uWebSockets.js/dist
